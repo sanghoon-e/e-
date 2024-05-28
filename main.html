@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="stylesheet/style.css">
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="./data.js"></script>
+    <script src="components/histogram.js"></script>
+    <script src="components/network.js"></script>
+    <script src="components/datatable.js"></script>
+
+    <title>Visualization Project - Sanghoon Lee</title>
+
+</head>
+
+<body>
+    <header>
+        <nav class="navbar navbar-dark bg-dark">
+
+            <div class="container-fluid" width="95%">
+                <span class="navbar-brand mb-0 h1">Visualization</span>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container-fluid vis-area" width="95%">
+        <div class="row mt-3">
+            <div class="text-center">
+                <svg width="800" height="500" id="network">
+                </svg>
+
+                <svg width="700" height="500" id="histogram">
+                </svg>
+            </div>
+        </div>
+
+        <h3>Node Detail</h3>
+
+        <table class="table table-striped text-center">
+            <thead>
+                <tr>
+                    <th>Index</th>
+                    <th>ID</th>
+                    <th>Timestamp</th>
+                    <th>Package</th>
+                    <th>Activity Name</th>
+                </tr>
+            </thead>
+            <tbody id="node-table">
+            </tbody>
+        </table>
+
+        <h3>Events</h3>
+        <table class="table table-striped text-center">
+            <thead>
+                <tr>
+                    <th>Index</th>
+                    <th>Timestamp</th>
+                    <th>Event Type</th>
+                    <th>Event Description</th>
+                </tr>
+            </thead>
+            <tbody id="edge-table">
+            </tbody>
+        </table>
+
+    </main>
+
+
+    <script>
+
+        const data = testData;
+        let detailData = [];
+
+        const links = data.edges.map(d => Object.create(d));
+        const nodes = data.nodes.map(d => Object.create(d));
+
+        function sortBy(field, order) {
+            return function (a, b) {
+                if (order == 'ase'){
+                    return (a[field] > b[field]) - (a[field] < b[field])
+                }else{
+                    return (a[field] < b[field]) - (a[field] > b[field])
+
+                }
+            };
+        }
+
+        function findEvents(nodeId) {
+            let edges = testData.edges;
+            let allEvents = [];
+
+            for (let i = 0; i < edges.length; i++) {
+                let events = edges[i].events;
+                for (let j = 0; j < events.length; j++) {
+                    let source = edges[i].source;
+
+                    if (source !== nodeId){
+                        continue;
+                    }
+
+                    console.log(events[j].crash);
+
+                    allEvents.push({
+                        index: events[j].index,
+                        tag: formattingTimestamp(events[j].tag),
+                        eventType: events[j].event_type,
+                        eventDesc: events[j].str,
+                    });
+                }
+            }
+            allEvents.sort(sortBy('index', 'ase'));
+
+            return allEvents;
+
+        }
+
+
+        function updateDataTable(nodeId) {
+            let nodeColumns = ['index', 'id', 'tag', 'activity', 'package']
+            nodeTable.update(detailData, nodeColumns);
+
+            let edgeColumns = ['index', 'tag', 'eventType', 'eventDesc']
+            edgeTable.update(findEvents(nodeId), edgeColumns);
+        }
+
+        function formattingTimestamp(tag) {
+            tag = tag.replace('_', ' ');
+            let result = tag.substring(0, 13) + ':' + tag.substring(13);
+            result = result.substring(0, 16) + ':' + result.substring(16);
+            result = result.substring(0, 19) + '.' + result.substring(19);
+
+            return result;
+        }
+
+
+        histogram = new Histogram("#histogram");
+        histogram.initialize();
+        histogram.update('all');
+
+
+        nodeTable = new DataTable("#node-table");
+        edgeTable = new DataTable("#edge-table");
+
+        network = new Network("#network")
+        network.initialize();
+        network.update(nodes, links);
+        network.node.on('click', (e, d) => {
+            let nodeId = nodes[d.index].id;
+            console.log(nodeId);
+
+            detailData = [];
+            detailData.push({
+                index: d.index,
+                id: d.id,
+                activity: d.activity,
+                package: d.package,
+                tag: formattingTimestamp(d.tag)
+
+            });
+
+            //updateBarChart(createBarDataSet(nodeId));
+            histogram.update(nodeId);
+            updateDataTable(nodeId);
+        }
+        );
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+</body>
+
+</html>
