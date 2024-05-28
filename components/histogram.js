@@ -1,3 +1,5 @@
+// reference : https://observablehq.com/@bsaienko/animated-bar-chart-with-tooltip
+// reference : https://d3-graph-gallery.com/graph/barplot_stacked_hover.html
 class Histogram {
     margin = {
         top: 30, right: 30, bottom: 70, left: 60
@@ -28,9 +30,10 @@ class Histogram {
             .attr("height", this.height + this.margin.top + this.margin.bottom);
 
         this.container.attr("transform", `translate(${this.margin.left}, ${this.margin.top})`);
+
     }
 
-    update(nodeId) {
+    update(nodeId, tooltip) {
         const data = this.createBarDataSet(nodeId);
 
         this.xScale.domain(data.map(function (d) { return d.name; }));
@@ -39,16 +42,36 @@ class Histogram {
         this.yScale.domain([0, d3.max(data, function (d) { return d.count })]);
         this.yAxis.transition().duration(1000).call(d3.axisLeft(this.yScale));
 
+        const staticColor = '#437c90';
+        const hoverColor = "#eec42d";
+
         this.container.selectAll("rect")
             .data(data)
             .join("rect")
-            .transition()
-            .duration(500)
+            //            .transition()
+            //            .duration(500)
             .attr("x", d => this.xScale(d.name))
             .attr("y", d => this.yScale(d.count))
             .attr("width", this.xScale.bandwidth())
             .attr("height", d => this.height - this.yScale(d.count))
-            .attr("fill", "lightgray")
+            .attr("fill", staticColor)
+            .on('mouseover', function (e, d) {
+                tooltip
+                    .html(
+                        `<div>Event Type: ${d.name}</div><div>Count: ${d.count}</div><div>Ratio: ${d.ratio} %</div>`
+                    )
+                    .style('visibility', 'visible');
+                d3.select(this).transition().attr('fill', hoverColor);
+            })
+            .on('mousemove', function (e) {
+                tooltip
+                    .style('top', e.pageY - 10 + 'px')
+                    .style('left', e.pageX + 10 + 'px');
+            })
+            .on('mouseout', function () {
+                tooltip.html(``).style('visibility', 'hidden');
+                d3.select(this).transition().attr('fill', staticColor);
+            });
 
         this.xAxis
             .attr("transform", `translate(${this.margin.left}, ${this.margin.top + this.height})`)
@@ -89,13 +112,19 @@ class Histogram {
         }
 
         let dataSet = [];
+        let sum = 0;
 
-        for (let k in eventTypeDict)
+        for (let k in eventTypeDict) {
             dataSet.push({ "name": k, "count": eventTypeDict[k] })
+            sum += eventTypeDict[k];
+        }
 
-        //dataSet.sort(this.sortBy('count'));
+        for (let i in dataSet) {
+            dataSet[i]['ratio'] = (dataSet[i]['count'] / sum * 100).toFixed(2);
+        }
+
         dataSet.sort(sortBy('count'));
-        
+
         return dataSet;
     }
 

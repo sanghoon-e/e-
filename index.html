@@ -82,9 +82,9 @@
 
         function sortBy(field, order) {
             return function (a, b) {
-                if (order == 'ase'){
+                if (order == 'ase') {
                     return (a[field] > b[field]) - (a[field] < b[field])
-                }else{
+                } else {
                     return (a[field] < b[field]) - (a[field] > b[field])
 
                 }
@@ -100,7 +100,7 @@
                 for (let j = 0; j < events.length; j++) {
                     let source = edges[i].source;
 
-                    if (source !== nodeId){
+                    if (source !== nodeId) {
                         continue;
                     }
 
@@ -117,9 +117,7 @@
             allEvents.sort(sortBy('index', 'ase'));
 
             return allEvents;
-
         }
-
 
         function updateDataTable(nodeId) {
             let nodeColumns = ['index', 'id', 'tag', 'activity', 'package']
@@ -138,10 +136,24 @@
             return result;
         }
 
+        const tooltip = d3
+            .select('body')
+            .append('div')
+            .attr('class', 'd3-tooltip')
+            .style('position', 'absolute')
+            .style('z-index', '10')
+            .style('visibility', 'hidden')
+            .style('padding', '10px')
+            .style('background', 'rgba(0,0,0,0.6)')
+            .style('border-radius', '4px')
+            .style('color', '#fff')
+            .text('a simple tooltip');
+
+
 
         histogram = new Histogram("#histogram");
         histogram.initialize();
-        histogram.update('all');
+        histogram.update('all', tooltip);
 
 
         nodeTable = new DataTable("#node-table");
@@ -165,7 +177,7 @@
             });
 
             //updateBarChart(createBarDataSet(nodeId));
-            histogram.update(nodeId);
+            histogram.update(nodeId, tooltip);
             updateDataTable(nodeId);
         }
         );

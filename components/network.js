@@ -1,3 +1,4 @@
+// reference: https://observablehq.com/@d3/force-directed-graph-component
 class Network {
     margin = {
         top: 10, right: 30, bottom: 30, left: 40
@@ -21,7 +22,7 @@ class Network {
     update(nodeData, linkData) {
         this.simulation = d3.forceSimulation(nodeData)
             .force("link", d3.forceLink(linkData).id(d => d.id))
-            .force("charge", d3.forceManyBody().strength(-80))
+            .force("charge", d3.forceManyBody().strength(-120))
             .force("x", d3.forceX())
             .force("y", d3.forceY())
             .force('collide', d3.forceCollide(d => 10))
@@ -73,7 +74,7 @@ class Network {
                     .attr("r", d => {
                         let nodeType = d.type;
                         if (nodeType === "start" || nodeType === "crash") {
-                            return 15;
+                            return 20;
                         }
 
                         return 12;
